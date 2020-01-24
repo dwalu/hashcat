@@ -5,10 +5,8 @@
 
 #include "common.h"
 #include "types.h"
-#include "memory.h"
 #include "event.h"
 #include "timer.h"
-#include "shared.h"
 #include "thread.h"
 
 /*
@@ -30,7 +28,7 @@ BOOL WINAPI sigHandler_default (DWORD sig)
 
       SetConsoleCtrlHandler (NULL, TRUE);
 
-      hc_sleep (10);
+      sleep (10);
 
       return TRUE;
 
@@ -58,7 +56,7 @@ BOOL WINAPI sigHandler_benchmark (DWORD sig)
 
       SetConsoleCtrlHandler (NULL, TRUE);
 
-      hc_sleep (10);
+      sleep (10);
 
       return TRUE;
 

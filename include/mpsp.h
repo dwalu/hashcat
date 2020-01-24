@@ -12,15 +12,17 @@
 
 #define CHARSIZ       0x100
 
-#define SP_HCSTAT     "hashcat.hcstat"
+#define SP_HCSTAT     "hashcat.hcstat2"
+#define SP_VERSION    (0x6863737461740000 | 0x0002)
 #define SP_PW_MIN     2
-#define SP_PW_MAX     64
+#define SP_PW_MAX     256
 #define SP_ROOT_CNT   (SP_PW_MAX * CHARSIZ)
 #define SP_MARKOV_CNT (SP_PW_MAX * CHARSIZ * CHARSIZ)
+#define SP_FILESZ     (sizeof (u64) + sizeof (u64) + (sizeof (u64) * SP_ROOT_CNT) + (sizeof (u64) * SP_MARKOV_CNT))
 
 #define INCR_MASKS    1000
 
-u32   mp_get_length (const char *mask);
+u32   mp_get_length (const char *mask, const u32 opts_type);
 
 void  sp_exec (u64 ctx, char *pw_buf, cs_t *root_css_buf, cs_t *markov_css_buf, u32 start, u32 stop);
 

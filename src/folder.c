@@ -16,8 +16,8 @@
 
 int sort_by_stringptr (const void *p1, const void *p2)
 {
-  const char **s1 = (const char **) p1;
-  const char **s2 = (const char **) p2;
+  const char* const *s1 = (const char* const *) p1;
+  const char* const *s2 = (const char* const *) p2;
 
   return strcmp (*s1, *s2);
 }
@@ -38,9 +38,9 @@ static int get_exec_path (char *exec_path, const size_t exec_path_sz)
 
   #elif defined (_WIN)
 
-  const DWORD len = GetModuleFileName (NULL, exec_path, exec_path_sz - 1);
+  memset (exec_path, 0, exec_path_sz);
 
-  if (len == 0) return -1;
+  const int len = 0;
 
   #elif defined (__APPLE__)
 
@@ -100,12 +100,12 @@ static void get_install_dir (char *install_dir, const char *exec_path)
 #if defined (_POSIX)
 static void get_profile_dir (char *profile_dir, const char *home_dir)
 {
-  snprintf (profile_dir, HCBUFSIZ_TINY - 1, "%s/%s", home_dir, DOT_HASHCAT);
+  snprintf (profile_dir, HCBUFSIZ_TINY, "%s/%s", home_dir, DOT_HASHCAT);
 }
 
 static void get_session_dir (char *session_dir, const char *profile_dir)
 {
-  snprintf (session_dir, HCBUFSIZ_TINY - 1, "%s/%s", profile_dir, SESSIONS_FOLDER);
+  snprintf (session_dir, HCBUFSIZ_TINY, "%s/%s", profile_dir, SESSIONS_FOLDER);
 }
 #endif
 
@@ -125,7 +125,7 @@ int count_dictionaries (char **dictionary_files)
 
 char *first_file_in_directory (const char *path)
 {
-  DIR *d = NULL;
+  DIR *d;
 
   if ((d = opendir (path)) != NULL)
   {
@@ -164,10 +164,6 @@ char *first_file_in_directory (const char *path)
     closedir (d);
 
     return first_file;
-  }
-  else if (errno == ENOTDIR)
-  {
-    return NULL;
   }
 
   return NULL;
@@ -333,7 +329,7 @@ int folder_config_init (hashcat_ctx_t *hashcat_ctx, MAYBE_UNUSED const char *ins
 
   if (resolved_exec_path == NULL)
   {
-    event_log_error (hashcat_ctx, "%s: %s", resolved_exec_path, strerror (errno));
+    event_log_error (hashcat_ctx, "%s: %s", exec_path, strerror (errno));
 
     hcfree (cwd);
 
@@ -344,7 +340,7 @@ int folder_config_init (hashcat_ctx_t *hashcat_ctx, MAYBE_UNUSED const char *ins
     return -1;
   }
 
-  char *install_dir = hcmalloc (HCBUFSIZ_TINY);
+  char *install_dir = (char *) hcmalloc (HCBUFSIZ_TINY);
 
   get_install_dir (install_dir, resolved_exec_path);
 
@@ -363,8 +359,8 @@ int folder_config_init (hashcat_ctx_t *hashcat_ctx, MAYBE_UNUSED const char *ins
 
     const char *home_dir = pwp->pw_dir;
 
-    profile_dir = hcmalloc (HCBUFSIZ_TINY);
-    session_dir = hcmalloc (HCBUFSIZ_TINY);
+    profile_dir = (char *) hcmalloc (HCBUFSIZ_TINY);
+    session_dir = (char *) hcmalloc (HCBUFSIZ_TINY);
 
     get_profile_dir (profile_dir, home_dir);
     get_session_dir (session_dir, profile_dir);
@@ -411,16 +407,9 @@ int folder_config_init (hashcat_ctx_t *hashcat_ctx, MAYBE_UNUSED const char *ins
 
   hc_asprintf (&cpath, "%s\\OpenCL\\", shared_dir);
 
-  char *cpath_real = (char *) hcmalloc (HCBUFSIZ_TINY);
+  char *cpath_real;
 
-  if (GetFullPathName (cpath, HCBUFSIZ_TINY - 1, cpath_real, NULL) == 0)
-  {
-    event_log_error (hashcat_ctx, "%s: %s", cpath, "GetFullPathName().");
-
-    hcfree (cwd);
-
-    return -1;
-  }
+  hc_asprintf (&cpath_real, "%s\\OpenCL\\", shared_dir);
 
   #else
 
@@ -435,9 +424,31 @@ int folder_config_init (hashcat_ctx_t *hashcat_ctx, MAYBE_UNUSED const char *ins
     hcfree (cwd);
 
     hcfree (shared_dir);
+
+    // Attention: since hcfree () doesn't set the pointer to NULL, we need to do it externally such that
+    // we prevent double-freeing the same memory address (this happens if e.g. profile_dir == session_dir)
+
+    if (profile_dir == shared_dir) profile_dir = NULL;
+    if (session_dir == shared_dir) session_dir = NULL;
+
+    shared_dir = NULL;
+
+
     hcfree (profile_dir);
-    hcfree (cpath_real);
+
+    if (session_dir == profile_dir) session_dir = NULL;
+
+    profile_dir = NULL;
+
+
     hcfree (session_dir);
+
+    session_dir = NULL;
+
+
+    hcfree (cpath_real);
+
+    cpath_real = NULL;
 
     return -1;
   }
@@ -447,7 +458,7 @@ int folder_config_init (hashcat_ctx_t *hashcat_ctx, MAYBE_UNUSED const char *ins
   hcfree (cpath);
 
   //if (getenv ("TMP") == NULL)
-  if (1)
+  if (true)
   {
     char *tmp;
 

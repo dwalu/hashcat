@@ -45,12 +45,20 @@ void event_call (const u32 id, hashcat_ctx_t *hashcat_ctx, const void *buf, cons
       event_ctx->old_len[i] = event_ctx->old_len[i - 1];
     }
 
+    size_t copy_len = 0;
+
     if (buf)
     {
-      memcpy (event_ctx->old_buf[0], buf, len);
+      // truncate the whole buffer if needed (such that it fits into the old_buf):
+
+      const size_t max_buf_len = sizeof (event_ctx->old_buf[0]);
+
+      copy_len = MIN (len, max_buf_len - 1);
+
+      memcpy (event_ctx->old_buf[0], buf, copy_len);
     }
 
-    event_ctx->old_len[0] = len;
+    event_ctx->old_len[0] = copy_len;
   }
 }
 
@@ -83,7 +91,7 @@ size_t event_log_advice_nn (hashcat_ctx_t *hashcat_ctx, const char *fmt, ...)
 
     va_start (ap, fmt);
 
-    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_TINY - 1);
+    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_SMALL - 1);
 
     va_end (ap);
   }
@@ -111,7 +119,7 @@ size_t event_log_info_nn (hashcat_ctx_t *hashcat_ctx, const char *fmt, ...)
 
     va_start (ap, fmt);
 
-    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_TINY - 1);
+    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_SMALL - 1);
 
     va_end (ap);
   }
@@ -139,7 +147,7 @@ size_t event_log_warning_nn (hashcat_ctx_t *hashcat_ctx, const char *fmt, ...)
 
     va_start (ap, fmt);
 
-    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_TINY - 1);
+    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_SMALL - 1);
 
     va_end (ap);
   }
@@ -167,7 +175,7 @@ size_t event_log_error_nn (hashcat_ctx_t *hashcat_ctx, const char *fmt, ...)
 
     va_start (ap, fmt);
 
-    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_TINY - 1);
+    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_SMALL - 1);
 
     va_end (ap);
   }
@@ -195,7 +203,7 @@ size_t event_log_advice (hashcat_ctx_t *hashcat_ctx, const char *fmt, ...)
 
     va_start (ap, fmt);
 
-    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_TINY - 1);
+    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_SMALL - 1);
 
     va_end (ap);
   }
@@ -223,7 +231,7 @@ size_t event_log_info (hashcat_ctx_t *hashcat_ctx, const char *fmt, ...)
 
     va_start (ap, fmt);
 
-    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_TINY - 1);
+    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_SMALL - 1);
 
     va_end (ap);
   }
@@ -251,7 +259,7 @@ size_t event_log_warning (hashcat_ctx_t *hashcat_ctx, const char *fmt, ...)
 
     va_start (ap, fmt);
 
-    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_TINY - 1);
+    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_SMALL - 1);
 
     va_end (ap);
   }
@@ -279,7 +287,7 @@ size_t event_log_error (hashcat_ctx_t *hashcat_ctx, const char *fmt, ...)
 
     va_start (ap, fmt);
 
-    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_TINY - 1);
+    event_ctx->msg_len = event_log (fmt, ap, event_ctx->msg_buf, HCBUFSIZ_SMALL - 1);
 
     va_end (ap);
   }

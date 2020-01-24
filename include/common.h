@@ -8,16 +8,18 @@
 
 #define PROGNAME "hashcat"
 
-#if   defined (__unix__) || defined (__APPLE__)
+#if defined (__unix__) || defined (__APPLE__)
 #define _POSIX
-#elif defined (__WINNT__)
+#elif defined (_WIN32)
 #define _WIN 1
 #else
 #error Your Operating System is not supported or detected
 #endif
 
+#if defined (__BYTE_ORDER__) && defined (__ORDER_BIG_ENDIAN__)
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #error "compiling for big-endian architecture not supported"
+#endif
 #endif
 
 #ifndef _GNU_SOURCE
@@ -33,6 +35,9 @@
 #ifndef _FILE_OFFSET_BITS
 #define _FILE_OFFSET_BITS 64
 #endif
+
+// _FORTIFY_SOURCE needs string.h
+#include <string.h>
 
 #ifndef _FORTIFY_SOURCE
 #define _FORTIFY_SOURCE 2
@@ -73,25 +78,55 @@ but this is nededed for VS compiler which doesn't have inline keyword but has __
 
 #define MAYBE_UNUSED __attribute__((unused))
 
+/*
+ * Check if the system uses nanoseconds for file timestamps.
+ * In case the system uses nanoseconds we set some custom macros here,
+ * e.g. the (nanosecond) access time macros for dictstat
+ */
+
+#if defined (__linux__)
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,48)
+#define STAT_NANOSECONDS_ACCESS_TIME st_atim.tv_nsec
+#endif
+#endif
+
+#if defined (__APPLE__)
+#define STAT_NANOSECONDS_ACCESS_TIME st_atimespec.tv_nsec
+#endif
+
+/**
+ * Disable this picky gcc-8 compiler warning
+ * We're in good company:
+ * https://github.com/curl/curl/blob/fc3743c31bb3c84e31a2eff99e958337571eb5f0/lib/md5.c#L487-L490
+ * https://github.com/kivadiu/thread/blob/ee607c86d4acd1d7733304526eb25d742b533071/src/win32/thread_primitives.cpp#L105-L113
+ */
+
+#if defined (__GNUC__) && (__GNUC__ >= 8)
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
+
 // config section
 // do not try to simply change this, it will not work
 
 #define PW_MIN              0
-#define PW_MAX              54
-#define PW_MAX1             (PW_MAX + 1)
-#define PW_DICTMAX          31
-#define PW_DICTMAX1         (PW_DICTMAX + 1)
+#define PW_MAX              256
+#define PW_MAX_OLD          55
+
+#define SALT_MIN            0
+#define SALT_MAX            256
+#define SALT_MAX_OLD        51
 
 #define HCBUFSIZ_TINY       0x1000
-#define HCBUFSIZ_LARGE      0x50000
+#define HCBUFSIZ_SMALL      0x2000
+#define HCBUFSIZ_LARGE      0xb0000
 
 #define CPT_CACHE           0x20000
 #define PARAMCNT            64
-#define DEVICES_MAX         128
+#define DEVICES_MAX         64
 #define EXEC_CACHE          128
-#define SPEED_CACHE         128
+#define SPEED_CACHE         4096
 #define SPEED_MAXAGE        4096
-#define BLOCK_SIZE          64
 #define EXPECTED_ITERATIONS 10000
 
 #if defined (_WIN)
